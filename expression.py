@@ -39,16 +39,16 @@ class Expression:
         self.id = id
 
     def __add__(self, other):
-        return AddOp ( self , other )
+        return AddKOp(self, other) if isinstance(self, Scalar) or isinstance(other, Scalar) else AddOp(self, other)
 
 
     def __sub__(self, other):
-        raise NotImplementedError("You need to implement this method.")
-        #should we use scalar (-1) or create a new class for this
+        return SubOp(self,other)
+        
 
 
     def __mul__(self, other):
-        return MultOp ( self , other )
+        return MultKOp(self, other) if isinstance(self, Scalar) or isinstance(other, Scalar) else MultOp(self, other)
 
 
     def __hash__(self):
@@ -58,40 +58,41 @@ class Expression:
     # Feel free to add as many methods as you like.
 
 
-    #TODO :to be removed 
-    def traverse(expr):
-        if isinstance(expr,AddOp):
-            return Expression . traverse(expr.a) + Expression . traverse(expr.b) 
-        if isinstance(expr,MultOp):
-            return  Expression . traverse(expr.a) * Expression . traverse(expr.b)
-        if isinstance(expr,Scalar):
-            return expr
-        if isinstance(expr,Secret):
-            return expr
-
 
     
 class AddOp ( Expression ) :
-    def __init__ ( self , a , b ) :
+    def __init__ ( self , a , b ,id: Optional[bytes] = None) :
         self . a = a
         self . b = b
+        super().__init__(id)
 
+class AddKOp ( Expression ) :
+    def __init__ ( self , a , b ,id: Optional[bytes] = None ) :
+        if isinstance(a, Scalar):
+            a, b = b, a
+        self . a = a
+        self . b = b
+        super().__init__(id)
 
+class SubOp ( Expression ) :
+    def __init__ ( self , a , b ,id: Optional[bytes] = None) :
+        self . a = a
+        self . b = b
+        super().__init__(id)
 
-# Intermediate tree node representing multipl ication operation .
-# ( Note it is now an instance of Expression )
 class MultOp ( Expression ) :
-    def __init__ ( self , a , b ) :
+    def __init__ ( self , a , b ,id: Optional[bytes] = None) :
         self . a = a
         self . b = b
+        super().__init__(id)
 
-
-# Leaf node representing a variable .
-# ( Note it is now an instance of Expression ) 
-#Here only for reference implementation , ie equivalent to scalar
-class Variable ( Expression ) :
-    def __init__ ( self , name = None ) :
-        self . name = name
+class MultKOp ( Expression ) :
+    def __init__ ( self , a , b ,id: Optional[bytes] = None) :
+        if isinstance(a, Scalar):
+            a, b = b, a
+        self . a = a
+        self . b = b
+        super().__init__(id)
 
 
 
@@ -101,7 +102,7 @@ class Scalar(Expression):
 
     def __init__(
             self,
-            value: int,
+            value: Optional[int] = 0,
             id: Optional[bytes] = None
         ):
         self.value = value
@@ -118,15 +119,9 @@ class Scalar(Expression):
 
     # Feel free to add as many methods as you like.
 
-
-
-
-
 class Secret(Expression):
     """Term representing a secret finite field value (variable)."""
     """leaf,  """
-
-
 
     def __init__(
             self,
