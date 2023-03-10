@@ -4,50 +4,96 @@ Secret sharing scheme.
 
 from __future__ import annotations
 
-from typing import List
-
+from typing import List , Optional
+from random import randint
+import json
 
 class Share:
     """
     A secret share in a finite field.
-    look at this https://github.com/nthparty/additive/blob/main/src/additive/additive.py
     """
 
-    def __init__(self, *args, **kwargs):
-        # Adapt constructor arguments as you wish
-        raise NotImplementedError("You need to implement this method.")
+    MODULUS = 1606687021
+    ##TODO we need to think about these value , here is a link to the moodle post https://moodle.epfl.ch/mod/forum/discuss.php?d=87132
+    ##TODO I have another slightly modified class conception in Notion
+
+    def __init__(self, n :Optional[int] = 0):
+        self._value = n % Share.MODULUS
 
     def __repr__(self):
         # Helps with debugging.
-        raise NotImplementedError("You need to implement this method.")
+        return "Share({})".format(self._value)
+    
+    def __int__(self):
+        return self._value
+    
+    def __len__(self):
+        return len(str(self._value))
 
     def __add__(self, other):
-        raise NotImplementedError("You need to implement this method.")
+        if isinstance(other,Share):
+            return Share(self._value + other._value)
+        elif isinstance(other,int):
+            return Share(self._value + other)
+        else :
+            raise NotImplementedError
+        
+    def __radd__(self, other):
+        return self.__add__(other)
 
+    
     def __sub__(self, other):
-        raise NotImplementedError("You need to implement this method.")
+        if isinstance(other,Share):
+            return Share(self._value - other._value)
+        elif isinstance(other,int):
+            return Share(self._value - other)
+        else :
+            raise NotImplementedError
+        
+    def __rsub__(self, other):
+        s = self.__sub__(other)
+        return Share(- s._value)
 
     def __mul__(self, other):
-        raise NotImplementedError("You need to implement this method.")
+        if isinstance(other,Share):
+            return Share(self._value * other._value)
+        elif isinstance(other,int):
+            return Share(self._value * other)
+        else :
+            raise NotImplementedError
+        
+    def __rmul__(self, other):
+        return self.__mul__(other)
 
     def serialize(self):
         """Generate a representation suitable for passing in a message."""
-        raise NotImplementedError("You need to implement this method.")
+        return json.dumps({'value': self._value})
+        
 
     @staticmethod
     def deserialize(serialized) -> Share:
         """Restore object from its serialized representation."""
-        raise NotImplementedError("You need to implement this method.")
+        deserialized = json.loads(serialized)
+        return Share(deserialized['value'])
 
 
 def share_secret(secret: int, num_shares: int) -> List[Share]:
     """Generate secret shares."""
-    raise NotImplementedError("You need to implement this method.")
+    
+    shares = [Share()]
+
+    for _ in range(num_shares-1):
+        share_i = Share(randint(0, Share.MODULUS))
+        shares.append(share_i)
+
+    shares[0] = Share(secret) - sum(shares)
+    return shares
 
 
 def reconstruct_secret(shares: List[Share]) -> int:
     """Reconstruct the secret from shares."""
-    raise NotImplementedError("You need to implement this method.")
+    return sum(shares)._value
 
 
-# Feel free to add as many methods as you want.
+
+
