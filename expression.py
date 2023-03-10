@@ -146,4 +146,21 @@ class Secret(Expression):
     # Feel free to add as many methods as you like.
 
 
-# Feel free to add as many classes as you like.
+
+##TODO this was added by me for debugging purposes  remove this
+def print_ast(expr, indent=0):
+    """
+    Print an abstract syntax tree (AST) recursively.
+    """
+    if isinstance(expr, AddOp):
+        print(' ' * indent + 'AddOp')
+        print_ast(expr.a, indent+2)
+        print_ast(expr.b, indent+2)
+    elif isinstance(expr, MultOp):
+        print(' ' * indent + 'MultOp')
+        print_ast(expr.a, indent+2)
+        print_ast(expr.b, indent+2)
+    elif isinstance(expr, Scalar):
+        print(' ' * indent + 'Scalar({})'.format(expr.value))
+    elif isinstance(expr, Secret):
+        print(' ' * indent + 'Secret({})'.format(expr.value))
