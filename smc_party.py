@@ -7,6 +7,7 @@ MODIFY THIS FILE.
 
 import collections
 import json
+from expression import *
 from typing import (
     Dict,
     Set,
@@ -56,6 +57,9 @@ class SMCParty:
         self.protocol_spec = protocol_spec
         self.value_dict = value_dict
 
+        #TODO modify this for the first participant , check with TAs on how to 
+        self.is_first_party = False
+
 
     def run(self) -> int:
         """
@@ -72,22 +76,40 @@ class SMCParty:
 
         #Here we need to call the corresponding protocol to the operations , first we can treat scalars as secrets , then optimize
         #after we know that the implementation works
+        p = self.process_expression
+        
+        if isinstance(expr, AddOp):
+            return p(expr.a) + p(expr.b)
+        
+        elif isinstance(expr,AddKOp):
+            if self.client_id == self.is_first_party:
+                k = Share(expr.b.value)
+            else:
+                k = Share()
+            return k + p(expr.a)
+        
+        elif isinstance(expr,SubOp):
+            return p(expr.a)-p(expr.b)
+        
+        elif isinstance(expr,MultOp):
+            return self.beaver(expr)
+        
+        elif isinstance(expr, MultKOp):
+            return p(expr.a) * p(expr.b)
+        
+        elif isinstance(expr,Scalar):
+            return Share(expr.value)
+        
+        elif isinstance(expr,Secret):
+            #TODO What to do when its a secret , retrieve secret share 
+            pass
 
-        # if expr is an addition operation:
-        #     ...
 
-        # if expr is a multiplication operation:
-        #     ...
 
-        # if expr is a secret:
-        #     ...
+    
 
-        # if expr is a scalar:
-        #     ...
-        #
-        # Call specialized methods for each expression type, and have these specialized
-        # methods in turn call `process_expression` on their sub-expressions to process
-        # further.
-        pass
+    #TODO implement beaver : https://github.com/fumiyanll23/beaver-triplet/blob/main/BeaverTriplet.py
+    # https://medium.com/applied-mpc/a-crash-course-on-mpc-part-2-fe6f847640ae
+    def beaver(self,mult_expr):
+        raise NotImplementedError("Not Implemented yet")
 
-    # Feel free to add as many methods as you want.
