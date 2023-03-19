@@ -1,7 +1,5 @@
 """
 Trusted parameters generator.
-
-MODIFY THIS FILE.
 """
 
 import collections
@@ -16,9 +14,10 @@ from secret_sharing import(
     share_secret,
     Share,
 )
+from random import randint
 
-# Feel free to add as many imports as you want.
 
+#For this implementation to work we need all participants to be added before the shares are retrieved.
 
 class TrustedParamGenerator:
     """
@@ -27,6 +26,8 @@ class TrustedParamGenerator:
 
     def __init__(self):
         self.participant_ids: Set[str] = set()
+        self.shares: Dict[(str, str), Tuple[Share, Share, Share]] = {}
+        self.op_ids: Set[str] = set()
 
 
     def add_participant(self, participant_id: str) -> None:
@@ -39,6 +40,29 @@ class TrustedParamGenerator:
         """
         Retrieve a triplet of shares for a given client_id.
         """
-        raise NotImplementedError("You need to implement this method.")
+        if client_id not in self.participant_ids :
+            raise ValueError("Client ID not valid")
+        if op_id not in self.op_ids: 
+            self.gen_beaver_triplet(op_id)
+            self.op_ids.add(self, op_id)
+        return self.shares[(client_id,op_id)]
+        
+    def gen_beaver_triplet(self, op_id: str) -> None:
+        """
+        Generate a beaver triplet and it's secret shares for each participant.
+        """
+        a = randint(0, Share.MODULUS )
+        b = randint(0, Share.MODULUS )
+        c = (a * b) % Share.MODULUS
+        
+        num_shares = len(self.participant_ids)
+        
+        shares_a = share_secret(a, num_shares)
+        shares_b = share_secret(b, num_shares)
+        shares_c = share_secret(c, num_shares)
 
-    # Feel free to add as many methods as you want.
+        
+        for i, client_id in enumerate(self.participant_ids):
+            self.shares[(op_id, client_id)] = (shares_a[i], shares_b[i], shares_c[i])
+
+    
