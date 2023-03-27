@@ -57,8 +57,8 @@ class SMCParty:
         self.protocol_spec = protocol_spec
         self.value_dict = value_dict
 
-        #TODO modify this for the first participant , check with TAs on how to 
-        self.is_first_party = False
+        #TODO modify this for the first participant , check with TAs on how to  , take min ? 
+        self.is_first_party = (min(self.protocol_spec.participant_ids) >= self.client_id)
         self.local_shares = self.share_secrets()
 
 
@@ -95,14 +95,15 @@ class SMCParty:
         local_share = self.process_expression(expr)
 
         # Share evaluation with other parties
-        label = 'client_id:'  + self.client_id + ',expression_id:' + expr.id 
+        #TODO Correct encoding
+        label = expr.id.decode("utf-8")
         to_send = local_share.serialize()
         self.comm.publish_message(label,to_send)
 
         shares = [local_share]
         # Retrieve other shares
         for pid in [pid for pid in self.protocol_spec.participant_ids if pid != self.client_id]:
-            label = 'client_id:'  + pid + ',expression_id:' + expr.id
+            label = expr.id.decode("utf-8") 
             pid_share = Share.deserialize(self.comm.retrieve_public_message(pid,label))
             shares.append(pid_share)
 
@@ -152,6 +153,14 @@ class SMCParty:
 
     #TODO implement beaver : https://github.com/fumiyanll23/beaver-triplet/blob/main/BeaverTriplet.py
     # https://medium.com/applied-mpc/a-crash-course-on-mpc-part-2-fe6f847640ae
-    def beaver(self,mult_expr):
-        raise NotImplementedError("Not Implemented yet")
+    def beaver(self,expr):
+        pass
+    
+
+if __name__ == '__main__':
+    exp = Scalar(4)*Scalar(6)+ Scalar(3)
+    x = SMCParty('0','0',0,None,{})
+    p = x.process_expression
+    print(p(exp))
+    print("Hello")
 

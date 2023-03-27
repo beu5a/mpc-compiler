@@ -44,7 +44,7 @@ class TrustedParamGenerator:
             raise ValueError("Client ID not valid")
         if op_id not in self.op_ids: 
             self.gen_beaver_triplet(op_id)
-            self.op_ids.add(self, op_id)
+            self.op_ids.add(op_id)
         return self.shares[(client_id,op_id)]
         
     def gen_beaver_triplet(self, op_id: str) -> None:
@@ -64,5 +64,6 @@ class TrustedParamGenerator:
         
         for i, client_id in enumerate(self.participant_ids):
             self.shares[(op_id, client_id)] = (shares_a[i], shares_b[i], shares_c[i])
+            #TODO : How  are the beaver triplets communicated ???
 
     
