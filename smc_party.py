@@ -79,6 +79,27 @@ class SMCParty:
                     self.comm.send_private_message(id, key.id, share.serialize())
         
         return local_shares
+    
+
+    def send_and_reconstruct_share(self, local_share, shr_id : str = None):
+        """
+        Method to send the local share of a value to the server and reconstruct the value from the other participant's shares.
+        """
+        
+        # Evaluate Expression
+        # Share evaluation with other parties
+        label = shr_id
+        to_send = local_share.serialize()
+        self.comm.publish_message(label, to_send)
+
+        shares = [local_share]
+        # Retrieve other shares
+        for pid in [pid for pid in self.protocol_spec.participant_ids if pid != self.client_id]:
+            pid_share = Share.deserialize(self.comm.retrieve_public_message(pid,label))
+            shares.append(pid_share)
+
+        return reconstruct_secret(shares)
+
 
 
 
@@ -90,24 +111,8 @@ class SMCParty:
         """
 
         expr = self.protocol_spec.expr
-
-        # Evaluate Expression
         local_share = self.process_expression(expr)
-
-        # Share evaluation with other parties
-        #TODO Correct encoding
-        label = expr.id.decode("utf-8")
-        to_send = local_share.serialize()
-        self.comm.publish_message(label,to_send)
-
-        shares = [local_share]
-        # Retrieve other shares
-        for pid in [pid for pid in self.protocol_spec.participant_ids if pid != self.client_id]:
-            label = expr.id.decode("utf-8") 
-            pid_share = Share.deserialize(self.comm.retrieve_public_message(pid,label))
-            shares.append(pid_share)
-
-        return reconstruct_secret(shares)
+        return self.send_and_reconstruct_share(local_share,expr.id.decode("utf-8"))
 
 
     # Suggestion: To process expressions, make use of the *visitor pattern* like so:
@@ -151,16 +156,29 @@ class SMCParty:
 
     
 
-    #TODO implement beaver : https://github.com/fumiyanll23/beaver-triplet/blob/main/BeaverTriplet.py
-    # https://medium.com/applied-mpc/a-crash-course-on-mpc-part-2-fe6f847640ae
-    def beaver(self,expr):
-        pass
-    
+    def beaver(self,mult_expr):
+        """
+        Function that implements the beaver triplet generation protocol
+        """
+        #first we get [a], [b], [c] from the trusted third party
+        (a,b,c) = self.comm.retrieve_beaver_triplet_shares(mult_expr.id)
 
-if __name__ == '__main__':
-    exp = Scalar(4)*Scalar(6)+ Scalar(3)
-    x = SMCParty('0','0',0,None,{})
-    p = x.process_expression
-    print(p(exp))
-    print("Hello")
+        #We need [x] and [y], mult_expr.a and mult_expr.b, but we need to process them in case they are not leaves
+        x = self.process_expression(mult_expr.a)
+        y = self.process_expression(mult_expr.b)
 
+
+
+    #TODO: A voir avec Yassine comment recupérer d et e et envoyer [d] et [e] aux autres parties
+                #Je pense que je devrai faire une fonction, mais peut etre que c'est dans le dictionnaire et run avec la classe
+                #Après reflexion je suis 80% sure que c'est pas la même que dans run donc on peut mettre une fonction utilitaire
+                #Confirmer avec Yassine.
+        
+        #We share [d] = [x-a] and retrieve d = (x-a) from the published shares
+        d = Share(self.send_and_reconstruct_share(x-a, mult_expr.id.decode("utf-8") + "_d" ))
+        #We share [e] = [y-b] and retrieve e = (y-b) from the other parties
+        e = Share(self.send_and_reconstruct_share(y-b, mult_expr.id.decode("utf-8") + "_e"))
+        
+        #We compute [z] = [c] + [x]*e + [y]*d - (ed if first party, 0 otherwise)
+
+        return c + x * e + y * d - (e * d if self.is_first_party else Share(0))

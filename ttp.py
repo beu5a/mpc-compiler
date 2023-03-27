@@ -45,7 +45,8 @@ class TrustedParamGenerator:
         if op_id not in self.op_ids: 
             self.gen_beaver_triplet(op_id)
             self.op_ids.add(op_id)
-        return self.shares[(client_id,op_id)]
+
+        return self.shares[(op_id,client_id)]
         
     def gen_beaver_triplet(self, op_id: str) -> None:
         """
