@@ -144,7 +144,10 @@ class SMCParty:
             return self.beaver(expr)
         
         elif isinstance(expr, MultKOp):
-            return p(expr.a) * p(expr.b)
+            mult = Share()
+            if self.is_first_party or not isinstance(expr.a, Scalar):
+                mult = p(expr.a) * p(expr.b)
+            return mult
         
         elif isinstance(expr,Scalar):
             return Share(expr.value)
@@ -166,13 +169,6 @@ class SMCParty:
         #We need [x] and [y], mult_expr.a and mult_expr.b, but we need to process them in case they are not leaves
         x = self.process_expression(mult_expr.a)
         y = self.process_expression(mult_expr.b)
-
-
-
-    #TODO: A voir avec Yassine comment recupérer d et e et envoyer [d] et [e] aux autres parties
-                #Je pense que je devrai faire une fonction, mais peut etre que c'est dans le dictionnaire et run avec la classe
-                #Après reflexion je suis 80% sure que c'est pas la même que dans run donc on peut mettre une fonction utilitaire
-                #Confirmer avec Yassine.
         
         #We share [d] = [x-a] and retrieve d = (x-a) from the published shares
         d = Share(self.send_and_reconstruct_share(x-a, mult_expr.id.decode("utf-8") + "_d" ))
