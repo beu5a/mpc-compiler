@@ -1,7 +1,6 @@
 """
 Integration tests that verify different aspects of the protocol.
 You can *add* new tests here, but it is best to  add them to a new test file.
-
 ALL EXISTING TESTS IN THIS SUITE SHOULD PASS WITHOUT ANY MODIFICATION TO THEM.
 """
 
@@ -272,4 +271,34 @@ def test_suite10():
 
     expr = alice_secret + bob_secret * (Scalar(15) + Scalar(15) * Scalar(3))
     expected = 3 + 5 * (15 + 15 * 3)
+    suite(parties, expr, expected)
+
+
+def test_AddKOp():
+
+    alice_secret = Secret()
+    bob_secret = Secret()
+
+    parties = {
+        "Alice": {alice_secret: 3},
+        "Bob": {bob_secret: 5},
+    }
+
+    expr = Scalar(15) + Scalar(3)
+    expected = 15 + 3
+    suite(parties, expr, expected)
+
+
+def test_MultKOp():
+
+    alice_secret = Secret()
+    bob_secret = Secret()
+
+    parties = {
+        "Alice": {alice_secret: 3},
+        "Bob": {bob_secret: 5},
+    }
+
+    expr = Scalar(5) * Scalar(3)
+    expected = 5 * 3
     suite(parties, expr, expected)

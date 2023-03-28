@@ -58,7 +58,7 @@ class SMCParty:
         self.value_dict = value_dict
 
         #TODO modify this for the first participant , check with TAs on how to  , take min ? 
-        self.is_first_party = (min(self.protocol_spec.participant_ids) >= self.client_id)
+        self.is_first_party = (min(self.protocol_spec.participant_ids) == self.client_id)
         self.local_shares = self.share_secrets()
 
 
@@ -102,9 +102,6 @@ class SMCParty:
 
 
 
-
-
-
     def run(self) -> int:
         """
         The method the client use to do the SMC.
@@ -127,11 +124,18 @@ class SMCParty:
             return p(expr.a) + p(expr.b)
         
         elif isinstance(expr,AddKOp):
+            k2 = p(expr.a)
             if self.is_first_party:
                 k = Share(expr.b.value)
             else:
                 k = Share()
-            return k + p(expr.a)
+            if isinstance(expr.a, Scalar):
+                if self.is_first_party:
+                    k2 = Share(expr.a.value)
+                else:
+                    k2 = Share()
+                
+            return k + k2
         
         elif isinstance(expr,SubOp):
             return p(expr.a)-p(expr.b)
@@ -151,10 +155,6 @@ class SMCParty:
                 self.local_shares[expr.id] = share
             return self.local_shares[expr.id]
 
-
-
-
-    
 
     def beaver(self,mult_expr):
         """
