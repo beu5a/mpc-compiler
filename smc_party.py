@@ -7,6 +7,8 @@ MODIFY THIS FILE.
 
 import collections
 import json
+import base64
+
 from expression import *
 from typing import (
     Dict,
@@ -57,9 +59,13 @@ class SMCParty:
         self.protocol_spec = protocol_spec
         self.value_dict = value_dict
 
-        #TODO modify this for the first participant , check with TAs on how to  , take min ? 
         self.is_first_party = (min(self.protocol_spec.participant_ids) == self.client_id)
+        self.smc_total_bytes_sent = 0
+        self.smc_total_bytes_recv = 0
+        self.ttp_total_bytes = 0
         self.local_shares = self.share_secrets()
+  
+
 
 
 
@@ -77,6 +83,7 @@ class SMCParty:
                     local_shares[key.id] = share
                 else:
                     self.comm.send_private_message(id, key.id, share.serialize())
+                    self.smc_total_bytes_sent += len(share.serialize())
         
         return local_shares
     
@@ -91,11 +98,14 @@ class SMCParty:
         label = shr_id
         to_send = local_share.serialize()
         self.comm.publish_message(label, to_send)
+        self.smc_total_bytes_sent += len(to_send)
 
         shares = [local_share]
         # Retrieve other shares
         for pid in [pid for pid in self.protocol_spec.participant_ids if pid != self.client_id]:
-            pid_share = Share.deserialize(self.comm.retrieve_public_message(pid,label))
+            bytes = self.comm.retrieve_public_message(pid,label)
+            self.smc_total_bytes_recv += len(bytes)
+            pid_share = Share.deserialize(bytes)
             shares.append(pid_share)
 
         return reconstruct_secret(shares)
@@ -109,7 +119,8 @@ class SMCParty:
 
         expr = self.protocol_spec.expr
         local_share = self.process_expression(expr)
-        return self.send_and_reconstruct_share(local_share,expr.id.decode("utf-8"))
+        res_perf = {"sent" : self.smc_total_bytes_sent , "recv" : self.smc_total_bytes_recv , "ttp" : self.ttp_total_bytes}
+        return self.send_and_reconstruct_share(local_share,expr.id.decode()), res_perf
 
 
     # Suggestion: To process expressions, make use of the *visitor pattern* like so:
@@ -129,6 +140,8 @@ class SMCParty:
                 k = Share(expr.b.value)
             else:
                 k = Share()
+
+
             if isinstance(expr.a, Scalar):
                 if self.is_first_party:
                     k2 = Share(expr.a.value)
@@ -164,16 +177,17 @@ class SMCParty:
         Function that implements the beaver triplet generation protocol
         """
         #first we get [a], [b], [c] from the trusted third party
-        (a,b,c) = self.comm.retrieve_beaver_triplet_shares(mult_expr.id)
+        (a,b,c),bts = self.comm.retrieve_beaver_triplet_shares(mult_expr.id)
+        self.ttp_total_bytes += bts
 
         #We need [x] and [y], mult_expr.a and mult_expr.b, but we need to process them in case they are not leaves
         x = self.process_expression(mult_expr.a)
         y = self.process_expression(mult_expr.b)
         
         #We share [d] = [x-a] and retrieve d = (x-a) from the published shares
-        d = Share(self.send_and_reconstruct_share(x-a, mult_expr.id.decode("utf-8") + "_d" ))
+        d = Share(self.send_and_reconstruct_share(x-a, mult_expr.id.decode() + "_d" ))
         #We share [e] = [y-b] and retrieve e = (y-b) from the other parties
-        e = Share(self.send_and_reconstruct_share(y-b, mult_expr.id.decode("utf-8") + "_e"))
+        e = Share(self.send_and_reconstruct_share(y-b, mult_expr.id.decode() + "_e"))
         
         #We compute [z] = [c] + [x]*e + [y]*d - (ed if first party, 0 otherwise)
 

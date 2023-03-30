@@ -65,6 +65,5 @@ class TrustedParamGenerator:
         
         for i, client_id in enumerate(self.participant_ids):
             self.shares[(op_id, client_id)] = (shares_a[i], shares_b[i], shares_c[i])
-            #TODO : How  are the beaver triplets communicated ???
 
     
