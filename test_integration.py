@@ -10,10 +10,14 @@ from multiprocessing import Process, Queue
 import pytest
 
 from expression import Scalar, Secret
+from manif import Manif
+from secret_sharing import Share
+
 from protocol import ProtocolSpec
 from server import run
 
 from smc_party import SMCParty
+from random import randint
 
 
 def smc_client(client_id, prot, value_dict, queue):
@@ -293,12 +297,52 @@ def test_MultKOp():
 
     alice_secret = Secret()
     bob_secret = Secret()
+    ob_secret = Secret()
 
     parties = {
         "Alice": {alice_secret: 3},
         "Bob": {bob_secret: 5},
+        "Ob": {ob_secret: 5},
+    }
+
+    expr = Scalar(5) * Scalar(3)
+    expected = 5 * 3 
+    alice_secret = Secret()
+    bob_secret = Secret()
+    ob_secret = Secret()
+
+    parties = {
+        "Alice": {alice_secret: 3},
+        "Bob": {bob_secret: 5},
+        "Ob": {ob_secret: 5},
     }
 
     expr = Scalar(5) * Scalar(3)
     expected = 5 * 3
     suite(parties, expr, expected)
+    suite(parties, expr, expected)
+
+
+def test_manif():
+    #First we set up the participants of the demonstration : 
+    # First secret is the amount they were fined, the second how much they are willing to give no matter what, and the last is 1 if they were fined and 0 if not. 
+    participants = {
+        "Alice": {Secret(): 500, Secret(): 50, Secret(): 1 },
+        "Bob": {Secret(): 300, Secret(): 30, Secret(): 1 },
+        "Eve": {Secret(): 0, Secret(): 50, Secret(): 0 },
+        "Marge": {Secret(): 700, Secret(): 50, Secret(): 1 },
+        "Bart": {Secret(): 0, Secret(): 10, Secret(): 0 }
+    }
+    #Next we set up the sponsors, their secret value is the amount they are willing to pay for each fined activist. 
+    sponsors = {
+        "sponsor1": {Secret(): 100},
+        "sponsor2": {Secret(): 50}
+    }
+
+    manif = Manif(participants, sponsors)
+
+    expected = 500 + 300 + 700 - 50 - 30 - 50 - 50 - 10 - (100 * 3 + 50 * 3) 
+    suite(manif.parties, manif.expr_to_pay, expected)
+
+
+
