@@ -119,8 +119,9 @@ class SMCParty:
 
         expr = self.protocol_spec.expr
         local_share = self.process_expression(expr)
+        res = self.send_and_reconstruct_share(local_share,expr.id.decode())
         res_perf = {"sent" : self.smc_total_bytes_sent , "recv" : self.smc_total_bytes_recv , "ttp" : self.ttp_total_bytes}
-        return self.send_and_reconstruct_share(local_share,expr.id.decode()), res_perf
+        return res , res_perf
 
 
     # Suggestion: To process expressions, make use of the *visitor pattern* like so:

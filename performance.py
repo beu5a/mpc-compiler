@@ -10,6 +10,7 @@ from server import run
 import time
 import statistics
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 import seaborn as sns
@@ -71,7 +72,7 @@ def suite(parties, expr):
     clients = [(name, prot, value_dict) for name, value_dict in parties.items()]
 
     results = run_processes(participants, *clients)
-
+    return results
 
 
 
@@ -87,8 +88,15 @@ def nparties():
         "Charlie": {charlie_secret: 2}
     }
 
-    times = []
-    num_clients_list = [1,5, 10, 20, 50, 75, 100]
+    num_runs = 10
+    num_clients_list = [1, 5, 10, 20, 50, 75, 100]
+
+    metrics = {
+        'sent': [],
+        'recv': [],
+        'ttp': [],
+        'time': []
+    }
 
     for num_clients in num_clients_list:
         benchmark_parties = dict()
@@ -98,21 +106,40 @@ def nparties():
         parties.update(benchmark_parties)
 
         expr = (alice_secret + bob_secret + charlie_secret)
-        start_time = time.time()
-        suite(parties, expr)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        times.append(elapsed_time)
+        run_times = []
+        sent_bytes = []
+        recv_bytes = []
+        ttp_bytes = []
+        for i in range(num_runs):
+            start_time = time.time()
+            x = suite(parties, expr)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            run_times.append(elapsed_time)
 
-    # Plot the results
-    sns.set(style="darkgrid")
-    sns.set_palette("husl")
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(num_clients_list, times, fmt='o-', markersize=8, capsize=5)
-    plt.xlabel("Number of Parties")
-    plt.ylabel("Time (Seconds)")
-    plt.savefig("nparties.png")
-    plt.show()
+            sent_bytes_run = 0
+            recv_bytes_run = 0
+            ttp_bytes_run = 0
+            for result in x:
+                sent_bytes_run += result[1]['sent']
+                recv_bytes_run += result[1]['recv']
+                ttp_bytes_run += result[1]['ttp']
+            sent_bytes.append(sent_bytes_run / len(x))
+            recv_bytes.append(recv_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run / len(x))
+
+        metrics['sent'].append({'num_clients': num_clients, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num_clients': num_clients, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num_clients': num_clients, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num_clients': num_clients, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+
+    # Print the results
+    for metric, data in metrics.items():
+        print(metric)
+        for d in data:
+            print(f"Num clients: {d['num_clients']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+        print()
+
 
 
 def nadd():
@@ -126,44 +153,60 @@ def nadd():
         "Charlie": {charlie_secret: 2}
     }
 
-    times = []
-    num_additions_list = [10, 100, 500]
+    num_runs = 10
+    num_add_list = [10, 100, 200, 500]
 
-    # Warmup runs
-    for i in range(3):
-        expr = alice_secret + bob_secret + charlie_secret
-        suite(parties, expr)
+    metrics = {
+        'sent': [],
+        'recv': [],
+        'ttp': [],
+        'time': []
+    }
 
-    for num_additions in num_additions_list:
+    for num_additions in num_add_list:
+
         expr = alice_secret
         for i in range(num_additions - 1):
-            expr += bob_secret
-        expr += charlie_secret
+            expr *= bob_secret
+        expr *= charlie_secret
 
         run_times = []
-        for i in range(5):
+        sent_bytes = []
+        recv_bytes = []
+        ttp_bytes = []
+        for i in range(num_runs):
             start_time = time.time()
-            suite(parties, expr)
+            x = suite(parties, expr)
             end_time = time.time()
             elapsed_time = end_time - start_time
             run_times.append(elapsed_time)
 
-        mean_time = statistics.mean(run_times)
-        std_dev = statistics.stdev(run_times)
-        times.append(mean_time)
+            sent_bytes_run = 0
+            recv_bytes_run = 0
+            ttp_bytes_run = 0
+            for result in x:
+                sent_bytes_run += result[1]['sent']
+                recv_bytes_run += result[1]['recv']
+                ttp_bytes_run += result[1]['ttp']
+            sent_bytes.append(sent_bytes_run / len(x))
+            recv_bytes.append(recv_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run / len(x))
 
-    # Plot the results
-    sns.set(style="darkgrid")
-    sns.set_palette("husl")
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(num_additions_list, times, fmt='o-', markersize=8, capsize=5)
-    plt.xlabel("Number of Additions")
-    plt.ylabel("Time (Seconds)")
-    plt.show()
+        metrics['sent'].append({'num_additions': num_additions, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num_additions': num_additions, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num_additions': num_additions, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num_additions': num_additions, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
+    # Print the results
+    for metric, data in metrics.items():
+        print(metric)
+        for d in data:
+            print(f"Num Additions: {d['num_additions']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+        print()
 
 
 def nmul():
+
     alice_secret = Secret()
     bob_secret = Secret()
     charlie_secret = Secret()
@@ -174,40 +217,56 @@ def nmul():
         "Charlie": {charlie_secret: 2}
     }
 
-    times = []
-    num_additions_list = [10, 20, 50, 75, 100, 150, 200, 250]
+    num_runs = 10
+    num_add_list = [10, 100, 200, 500]
 
-    # Warmup runs
-    for i in range(3):
-        expr = alice_secret + bob_secret + charlie_secret
-        suite(parties, expr)
+    metrics = {
+        'sent': [],
+        'recv': [],
+        'ttp': [],
+        'time': []
+    }
 
-    for num_additions in num_additions_list:
+    for num_multip in num_add_list:
+
         expr = alice_secret
-        for i in range(num_additions - 1):
-            expr *= bob_secret
-        expr *= charlie_secret
+        for i in range(num_multip - 1):
+            expr += bob_secret
+        expr += charlie_secret
 
         run_times = []
-        for i in range(5):
+        sent_bytes = []
+        recv_bytes = []
+        ttp_bytes = []
+        for i in range(num_runs):
             start_time = time.time()
-            suite(parties, expr)
+            x = suite(parties, expr)
             end_time = time.time()
             elapsed_time = end_time - start_time
             run_times.append(elapsed_time)
 
-        mean_time = statistics.mean(run_times)
-        std_dev = statistics.stdev(run_times)
-        times.append(mean_time)
+            sent_bytes_run = 0
+            recv_bytes_run = 0
+            ttp_bytes_run = 0
+            for result in x:
+                sent_bytes_run += result[1]['sent']
+                recv_bytes_run += result[1]['recv']
+                ttp_bytes_run += result[1]['ttp']
+            sent_bytes.append(sent_bytes_run / len(x))
+            recv_bytes.append(recv_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run / len(x))
 
-    # Plot the results
-    sns.set(style="darkgrid")
-    sns.set_palette("husl")
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(num_additions_list, times, fmt='o-', markersize=8, capsize=5)
-    plt.xlabel("Number of Multiplications")
-    plt.ylabel("Time (Seconds)")
-    plt.show()
+        metrics['sent'].append({'num_multip': num_multip, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num_multip': num_multip, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num_multip': num_multip, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num_multip': num_multip, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+
+    # Print the results
+    for metric, data in metrics.items():
+        print(metric)
+        for d in data:
+            print(f"Num Multiplications: {d['num_multip']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+        print()
 
 
 
@@ -216,6 +275,7 @@ def nkadd():
     alice_secret = Secret()
     bob_secret = Secret()
     charlie_secret = Secret()
+    k = Scalar(1)
 
     parties = {
         "Alice": {alice_secret: 3},
@@ -223,46 +283,63 @@ def nkadd():
         "Charlie": {charlie_secret: 2}
     }
 
-    times = []
-    num_additions_list = [10, 20, 50, 75, 100, 150, 200, 250]
-    k = Scalar(1)
-    # Warmup runs
-    for i in range(3):
-        expr = alice_secret + bob_secret + charlie_secret
-        suite(parties, expr)
+    num_runs = 10
+    num_add_list = [10, 100, 200, 500]
 
-    for num_additions in num_additions_list:
+    metrics = {
+        'sent': [],
+        'recv': [],
+        'ttp': [],
+        'time': []
+    }
+
+    for num_kmul in num_add_list:
+
         expr = alice_secret
-        for i in range(num_additions - 1):
+        for i in range(num_kmul - 1):
             expr += k
         expr += charlie_secret
 
         run_times = []
-        for i in range(5):
+        sent_bytes = []
+        recv_bytes = []
+        ttp_bytes = []
+        for i in range(num_runs):
             start_time = time.time()
-            suite(parties, expr)
+            x = suite(parties, expr)
             end_time = time.time()
             elapsed_time = end_time - start_time
             run_times.append(elapsed_time)
 
-        mean_time = statistics.mean(run_times)
-        std_dev = statistics.stdev(run_times)
-        times.append(mean_time)
+            sent_bytes_run = 0
+            recv_bytes_run = 0
+            ttp_bytes_run = 0
+            for result in x:
+                sent_bytes_run += result[1]['sent']
+                recv_bytes_run += result[1]['recv']
+                ttp_bytes_run += result[1]['ttp']
+            sent_bytes.append(sent_bytes_run / len(x))
+            recv_bytes.append(recv_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run / len(x))
 
-    # Plot the results
-    sns.set(style="darkgrid")
-    sns.set_palette("husl")
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(num_additions_list, times, fmt='o-', markersize=8, capsize=5)
-    plt.xlabel("Number of Scalar Additions")
-    plt.ylabel("Time (Seconds)")
-    plt.show()
+        metrics['sent'].append({'num_kmul': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num_kmul': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num_kmul': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num_kmul': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+
+    # Print the results
+    for metric, data in metrics.items():
+        print(metric)
+        for d in data:
+            print(f"Num Scalar Additions: {d['num_kmul']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+        print()
 
 
 def nkmul():
     alice_secret = Secret()
     bob_secret = Secret()
     charlie_secret = Secret()
+    k = Scalar(2)
 
     parties = {
         "Alice": {alice_secret: 3},
@@ -270,43 +347,59 @@ def nkmul():
         "Charlie": {charlie_secret: 2}
     }
 
-    times = []
-    num_additions_list = [10, 20, 50, 75, 100, 150, 200, 250]
-    k = Scalar(1)
-    # Warmup runs
-    for i in range(3):
-        expr = alice_secret + bob_secret + charlie_secret
-        suite(parties, expr)
+    num_runs = 10
+    num_add_list = [10, 100, 200, 500]
 
-    for num_additions in num_additions_list:
+    metrics = {
+        'sent': [],
+        'recv': [],
+        'ttp': [],
+        'time': []
+    }
+
+    for num_kmul in num_add_list:
+
         expr = alice_secret
-        for i in range(num_additions - 1):
+        for i in range(num_kmul - 1):
             expr *= k
-        expr += charlie_secret
+        expr *= charlie_secret
 
         run_times = []
-        for i in range(5):
+        sent_bytes = []
+        recv_bytes = []
+        ttp_bytes = []
+        for i in range(num_runs):
             start_time = time.time()
-            suite(parties, expr)
+            x = suite(parties, expr)
             end_time = time.time()
             elapsed_time = end_time - start_time
             run_times.append(elapsed_time)
 
-        mean_time = statistics.mean(run_times)
-        std_dev = statistics.stdev(run_times)
-        times.append(mean_time)
+            sent_bytes_run = 0
+            recv_bytes_run = 0
+            ttp_bytes_run = 0
+            for result in x:
+                sent_bytes_run += result[1]['sent']
+                recv_bytes_run += result[1]['recv']
+                ttp_bytes_run += result[1]['ttp']
+            sent_bytes.append(sent_bytes_run / len(x))
+            recv_bytes.append(recv_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run / len(x))
 
-    # Plot the results
-    sns.set(style="darkgrid")
-    sns.set_palette("husl")
-    plt.figure(figsize=(8, 6))
-    plt.errorbar(num_additions_list, times, fmt='o-', markersize=8, capsize=5)
-    plt.xlabel("Number of Scalar Multiplications")
-    plt.ylabel("Time (Seconds)")
-    plt.show()
+        metrics['sent'].append({'num_kmul': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num_kmul': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num_kmul': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num_kmul': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+
+    # Print the results
+    for metric, data in metrics.items():
+        print(metric)
+        for d in data:
+            print(f"Num Scalar Multiplications: {d['num_kmul']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+        print()
 
 if __name__== "__main__" :
-    nadd()
+    nparties()
 
 
 
