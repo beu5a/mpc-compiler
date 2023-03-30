@@ -11,10 +11,18 @@ import time
 import statistics
 import matplotlib.pyplot as plt
 import numpy as np
-
+import sys
 
 import seaborn as sns
 from tqdm import tqdm
+
+import os
+import numpy as np
+import time
+from sympy import symbols, Secret, Scalar
+from sympy.utilities.iterables import multiset_permutations
+from sympy.printing.str import StrPrinter
+from sympy.printing.latex import LatexPrinter
 
 from smc_party import SMCParty
 
@@ -76,6 +84,42 @@ def suite(parties, expr):
 
 
 
+def print_metrics(metrics):
+    # Check if file exists
+    if not os.path.exists('metrics.txt'):
+        with open('metrics.txt', 'w') as f:
+            f.write('\\begin{table}[ht]\n')
+            f.write('\\centering\n')
+            f.write('\\begin{tabular}{c c c c}\n')
+            f.write('\\hline\n')
+            f.write('Num Scalar Additions & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
+            f.write('\\hline\n')
+            f.write('\\end{tabular}\n')
+            f.write('\\caption{Performance metrics for nkadd}\n')
+            f.write('\\label{tab:nkadd_metrics}\n')
+            f.write('\\end{table}\n')
+
+    # Append metrics to file
+    with open('metrics.txt', 'a') as f:
+        f.write('\\begin{table}[ht]\n')
+        f.write('\\centering\n')
+        f.write('\\begin{tabular}{c c c c}\n')
+        f.write('\\hline\n')
+        f.write('Num Scalar Additions & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
+        f.write('\\hline\n')
+        for d in metrics['sent']:
+            index = d['index']
+            f.write(f"{metrics['num'][index]} & {d['mean']:.4f} $\\pm$ {d['std']:.4f} & ")
+            f.write(f"{metrics['recv'][index]['mean']:.4f} $\\pm$ {metrics['recv'][index]['std']:.4f} & ")
+            f.write(f"{metrics['time'][index]['mean']:.4f} $\\pm$ {metrics['time'][index]['std']:.4f} \\\\ \n")
+        f.write('\\hline\n')
+        f.write('\\end{tabular}\n')
+        f.write('\\end{table}\n')
+
+
+
+
+
 def nparties():
 
     alice_secret = Secret()
@@ -128,16 +172,16 @@ def nparties():
             recv_bytes.append(recv_bytes_run / len(x))
             ttp_bytes.append(ttp_bytes_run / len(x))
 
-        metrics['sent'].append({'num_clients': num_clients, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
-        metrics['recv'].append({'num_clients': num_clients, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
-        metrics['ttp'].append({'num_clients': num_clients, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
-        metrics['time'].append({'num_clients': num_clients, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+        metrics['sent'].append({'num': num_clients, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num': num_clients, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num': num_clients, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num': num_clients, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
     # Print the results
     for metric, data in metrics.items():
         print(metric)
         for d in data:
-            print(f"Num clients: {d['num_clients']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+            print(f"Num clients: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
 
@@ -192,16 +236,16 @@ def nadd():
             recv_bytes.append(recv_bytes_run / len(x))
             ttp_bytes.append(ttp_bytes_run / len(x))
 
-        metrics['sent'].append({'num_additions': num_additions, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
-        metrics['recv'].append({'num_additions': num_additions, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
-        metrics['ttp'].append({'num_additions': num_additions, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
-        metrics['time'].append({'num_additions': num_additions, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+        metrics['sent'].append({'num': num_additions, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num': num_additions, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num': num_additions, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num': num_additions, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
     # Print the results
     for metric, data in metrics.items():
         print(metric)
         for d in data:
-            print(f"Num Additions: {d['num_additions']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+            print(f"Num Additions: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
 
@@ -256,16 +300,16 @@ def nmul():
             recv_bytes.append(recv_bytes_run / len(x))
             ttp_bytes.append(ttp_bytes_run / len(x))
 
-        metrics['sent'].append({'num_multip': num_multip, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
-        metrics['recv'].append({'num_multip': num_multip, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
-        metrics['ttp'].append({'num_multip': num_multip, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
-        metrics['time'].append({'num_multip': num_multip, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+        metrics['sent'].append({'num': num_multip, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num': num_multip, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num': num_multip, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num': num_multip, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
     # Print the results
     for metric, data in metrics.items():
         print(metric)
         for d in data:
-            print(f"Num Multiplications: {d['num_multip']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+            print(f"Num Multiplications: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
 
@@ -322,16 +366,16 @@ def nkadd():
             recv_bytes.append(recv_bytes_run / len(x))
             ttp_bytes.append(ttp_bytes_run / len(x))
 
-        metrics['sent'].append({'num_kmul': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
-        metrics['recv'].append({'num_kmul': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
-        metrics['ttp'].append({'num_kmul': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
-        metrics['time'].append({'num_kmul': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+        metrics['sent'].append({'num': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
     # Print the results
     for metric, data in metrics.items():
         print(metric)
         for d in data:
-            print(f"Num Scalar Additions: {d['num_kmul']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+            print(f"Num Scalar Additions: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
 
@@ -386,20 +430,25 @@ def nkmul():
             recv_bytes.append(recv_bytes_run / len(x))
             ttp_bytes.append(ttp_bytes_run / len(x))
 
-        metrics['sent'].append({'num_kmul': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
-        metrics['recv'].append({'num_kmul': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
-        metrics['ttp'].append({'num_kmul': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
-        metrics['time'].append({'num_kmul': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
+        metrics['sent'].append({'num': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
+        metrics['recv'].append({'num': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
+        metrics['ttp'].append({'num': num_kmul, 'mean': np.mean(ttp_bytes), 'std': np.std(ttp_bytes)})
+        metrics['time'].append({'num': num_kmul, 'mean': np.mean(run_times), 'std': np.std(run_times)})
 
     # Print the results
     for metric, data in metrics.items():
         print(metric)
         for d in data:
-            print(f"Num Scalar Multiplications: {d['num_kmul']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
+            print(f"Num Scalar Multiplications: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
 if __name__== "__main__" :
+    sys.setrecursionlimit(5000)
     nparties()
+    nadd()
+    nmul()
+    nkadd()
+    nkmul()
 
 
 
