@@ -1,0 +1,87 @@
+Latex arrays for performance
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+Parameter & \multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\ 
+\cline{2-4}
+& SMC_{sent} & SMC_{received} & TTP_{total} &  \\ 
+\hline
+1 & 80.9 $\pm$ 0.52 & 60.8 $\pm$ 0.58 & 0.0 $\pm$ 0.00 & 5.126 $\pm$ 0.0976 \\ 
+5 & 162.6 $\pm$ 0.59 & 141.7 $\pm$ 0.99 & 0.0 $\pm$ 0.00 & 5.256 $\pm$ 0.0565 \\ 
+10 & 264.0 $\pm$ 0.27 & 244.5 $\pm$ 1.51 & 0.0 $\pm$ 0.00 & 5.304 $\pm$ 0.0446 \\ 
+25 & 568.7 $\pm$ 0.65 & 548.0 $\pm$ 3.69 & 0.0 $\pm$ 0.00 & 5.639 $\pm$ 0.0133 \\ 
+50 & 1076.4 $\pm$ 0.60 & 1056.1 $\pm$ 6.60 & 0.0 $\pm$ 0.00 & 7.157 $\pm$ 0.0435 \\ 
+100 & 2091.8 $\pm$ 0.50 & 2074.8 $\pm$ 4.86 & 0.0 $\pm$ 0.00 & 13.275 $\pm$ 0.1410 \\ 
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+Parameter & \multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\ 
+\cline{2-4}
+& SMC_{sent} & SMC_{received} & TTP_{total} &  \\ 
+\hline
+10 & 466.7 $\pm$ 1.25 & 852.5 $\pm$ 1.68 & 2638.3 $\pm$ 7.52 & 5.169 $\pm$ 0.0832 \\ 
+100 & 4121.7 $\pm$ 3.38 & 8162.5 $\pm$ 6.75 & 26378.2 $\pm$ 18.07 & 6.361 $\pm$ 0.7388 \\ 
+200 & 8185.6 $\pm$ 6.03 & 16290.0 $\pm$ 11.73 & 52762.0 $\pm$ 28.93 & 8.006 $\pm$ 1.2941 \\ 
+500 & 20370.2 $\pm$ 13.28 & 40659.4 $\pm$ 26.21 & 131892.2 $\pm$ 38.48 & 16.595 $\pm$ 6.0264 \\ 
+1000 & 40687.0 $\pm$ 22.35 & 81292.5 $\pm$ 44.66 & 263764.7 $\pm$ 33.81 & 23.686 $\pm$ 10.8768 \\ 
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+Parameter & \multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\ 
+\cline{2-4}
+& SMC_{sent} & SMC_{received} & TTP_{total} &  \\ 
+\hline
+10 & 60.9 $\pm$ 0.39 & 40.7 $\pm$ 0.60 & 0.0 $\pm$ 0.00 & 5.038 $\pm$ 0.0020 \\ 
+100 & 61.0 $\pm$ 0.86 & 40.7 $\pm$ 0.55 & 0.0 $\pm$ 0.00 & 5.039 $\pm$ 0.0010 \\ 
+200 & 60.8 $\pm$ 0.78 & 40.5 $\pm$ 0.72 & 0.0 $\pm$ 0.00 & 5.037 $\pm$ 0.0024 \\ 
+500 & 60.7 $\pm$ 0.53 & 40.4 $\pm$ 0.68 & 0.0 $\pm$ 0.00 & 5.057 $\pm$ 0.0610 \\ 
+1000 & 61.0 $\pm$ 0.43 & 40.6 $\pm$ 0.70 & 0.0 $\pm$ 0.00 & 5.079 $\pm$ 0.0833 \\ 
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+Parameter & \multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\ 
+\cline{2-4}
+& SMC_{sent} & SMC_{received} & TTP_{total} &  \\ 
+\hline
+10 & 60.6 $\pm$ 0.30 & 40.4 $\pm$ 0.68 & 0.0 $\pm$ 0.00 & 5.237 $\pm$ 0.0030 \\ 
+100 & 60.7 $\pm$ 0.47 & 40.4 $\pm$ 0.74 & 0.0 $\pm$ 0.00 & 5.219 $\pm$ 0.0598 \\ 
+200 & 60.8 $\pm$ 0.73 & 40.5 $\pm$ 0.65 & 0.0 $\pm$ 0.00 & 5.241 $\pm$ 0.0017 \\ 
+500 & 61.1 $\pm$ 0.57 & 40.7 $\pm$ 0.79 & 0.0 $\pm$ 0.00 & 5.221 $\pm$ 0.0602 \\ 
+1000 & 61.0 $\pm$ 0.63 & 40.5 $\pm$ 0.58 & 0.0 $\pm$ 0.00 & 5.241 $\pm$ 0.0026 \\ 
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{c c c c c}
+\hline
+Parameter & \multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\ 
+\cline{2-4}
+& SMC_{sent} & SMC_{received} & TTP_{total} &  \\ 
+\hline
+10 & 101.3 $\pm$ 0.67 & 121.5 $\pm$ 1.46 & 262.6 $\pm$ 1.62 & 5.251 $\pm$ 0.0013 \\ 
+100 & 102.0 $\pm$ 0.89 & 122.6 $\pm$ 0.87 & 263.7 $\pm$ 1.42 & 5.250 $\pm$ 0.0014 \\ 
+200 & 101.9 $\pm$ 0.60 & 122.1 $\pm$ 1.07 & 264.3 $\pm$ 1.90 & 5.292 $\pm$ 0.0816 \\ 
+500 & 101.3 $\pm$ 0.65 & 121.8 $\pm$ 1.19 & 264.5 $\pm$ 2.01 & 5.232 $\pm$ 0.1094 \\ 
+1000 & 101.5 $\pm$ 0.78 & 121.8 $\pm$ 0.99 & 263.8 $\pm$ 1.17 & 5.233 $\pm$ 0.0601 \\ 
+\hline
+\end{tabular}
+\end{table}

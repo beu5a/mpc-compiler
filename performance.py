@@ -91,41 +91,36 @@ def print_metrics(metrics):
     # Check if file exists
     if not os.path.exists('metrics.txt'):
         with open('metrics.txt', 'w') as f:
-            f.write('\\begin{table}[ht]\n')
-            f.write('\\centering\n')
-            f.write('\\begin{tabular}{c c c c}\n')
-            f.write('\\hline\n')
-            f.write('Num Clients & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
-            f.write('\\hline\n')
-            f.write('\\end{tabular}\n')
-            f.write('\\caption{Performance metrics for nkadd}\n')
-            f.write('\\label{tab:nkadd_metrics}\n')
-            f.write('\\end{table}\n')
+            f.write('Latex arrays for performance\n')
 
     # Append metrics to file
     with open('metrics.txt', 'a') as f:
+
+        f.write('\n')
         f.write('\\begin{table}[ht]\n')
         f.write('\\centering\n')
-        f.write('\\begin{tabular}{c c c c}\n')
+        f.write('\\begin{tabular}{c c c c c}\n')
         f.write('\\hline\n')
-        f.write('Num Clients & SMC sent & SMC recv & ttp & Time (s) \\\\ \n')
+        f.write('Parameter & \\multicolumn{3}{c}{Communication Cost(bytes)} & Computation Time(s)\\\\ \n')
+        f.write('\\cline{2-4}\n')
+        f.write('& SMC_{sent} & SMC_{received} & TTP_{total} &  \\\\ \n')
         f.write('\\hline\n')
         for d in metrics['sent']:
             num = d['num']
-            f.write(f"{num} & {d['mean']:.4f} $\\pm$ {d['std']:.4f} & ")
+            f.write(f"{num} & {d['mean']:.1f} $\\pm$ {d['std']:.2f} & ")
             recv = next((item for item in metrics['recv'] if item['num'] == num), None)
             if recv:
-                f.write(f"{recv['mean']:.4f} $\\pm$ {recv['std']:.4f} & ")
+                f.write(f"{recv['mean']:.1f} $\\pm$ {recv['std']:.2f} & ")
             else:
                 f.write('- & ')
             ttp = next((item for item in metrics['ttp'] if item['num'] == num), None)
             if ttp:
-                f.write(f"{ttp['mean']:.4f} $\\pm$ {ttp['std']:.4f} \\\\ \n")
+                f.write(f"{ttp['mean']:.1f} $\\pm$ {ttp['std']:.2f} & ")
             else:
-                f.write('- & \\\\ \n')
+                f.write('- & ')
             time = next((item for item in metrics['time'] if item['num'] == num), None)
-            if ttp:
-                f.write(f"{time['mean']:.4f} $\\pm$ {time['std']:.4f} \\\\ \n")
+            if time:
+                f.write(f"{time['mean']:.3f} $\\pm$ {time['std']:.4f} \\\\ \n")
             else:
                 f.write('- & \\\\ \n')
         f.write('\\hline\n')
@@ -153,8 +148,8 @@ def nparties():
         "Bob": {bob_secret: 14},
         "Charlie": {charlie_secret: 2}
     }
-    num_runs = 1
-    num_clients_list = [1, 5]
+    num_runs = 10
+    num_clients_list = [1, 5, 10, 25, 50, 100]
 
     metrics = {
         'sent': [],
@@ -191,7 +186,7 @@ def nparties():
                 ttp_bytes_run += result[1]['ttp']
             sent_bytes.append(sent_bytes_run / len(x))
             recv_bytes.append(recv_bytes_run / len(x))
-            ttp_bytes.append(ttp_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run)
 
         metrics['sent'].append({'num': num_clients, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
         metrics['recv'].append({'num': num_clients, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
@@ -220,7 +215,7 @@ def nadd():
     }
 
     num_runs = 10
-    num_add_list = [10, 100, 200, 500]
+    num_add_list = [10, 100, 200, 500, 1000]
 
     metrics = {
         'sent': [],
@@ -256,7 +251,7 @@ def nadd():
                 ttp_bytes_run += result[1]['ttp']
             sent_bytes.append(sent_bytes_run / len(x))
             recv_bytes.append(recv_bytes_run / len(x))
-            ttp_bytes.append(ttp_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run)
 
         metrics['sent'].append({'num': num_additions, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
         metrics['recv'].append({'num': num_additions, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
@@ -269,6 +264,8 @@ def nadd():
         for d in data:
             print(f"Num Additions: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
+    
+    print_metrics(metrics)
 
 
 def nmul():
@@ -284,7 +281,7 @@ def nmul():
     }
 
     num_runs = 10
-    num_add_list = [10, 100, 200, 500]
+    num_add_list = [10, 100, 200, 500, 1000]
 
     metrics = {
         'sent': [],
@@ -320,7 +317,7 @@ def nmul():
                 ttp_bytes_run += result[1]['ttp']
             sent_bytes.append(sent_bytes_run / len(x))
             recv_bytes.append(recv_bytes_run / len(x))
-            ttp_bytes.append(ttp_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run)
 
         metrics['sent'].append({'num': num_multip, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
         metrics['recv'].append({'num': num_multip, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
@@ -333,6 +330,8 @@ def nmul():
         for d in data:
             print(f"Num Multiplications: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
+    
+    print_metrics(metrics)
 
 
 
@@ -350,7 +349,7 @@ def nkadd():
     }
 
     num_runs = 10
-    num_add_list = [10, 100, 200, 500]
+    num_add_list = [10, 100, 200, 500, 1000]
 
     metrics = {
         'sent': [],
@@ -386,7 +385,7 @@ def nkadd():
                 ttp_bytes_run += result[1]['ttp']
             sent_bytes.append(sent_bytes_run / len(x))
             recv_bytes.append(recv_bytes_run / len(x))
-            ttp_bytes.append(ttp_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run)
 
         metrics['sent'].append({'num': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
         metrics['recv'].append({'num': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
@@ -399,6 +398,8 @@ def nkadd():
         for d in data:
             print(f"Num Scalar Additions: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
+
+    print_metrics(metrics)
 
 
 def nkmul():
@@ -414,7 +415,7 @@ def nkmul():
     }
 
     num_runs = 10
-    num_add_list = [10, 100, 200, 500]
+    num_add_list = [10, 100, 200, 500, 1000]
 
     metrics = {
         'sent': [],
@@ -450,7 +451,7 @@ def nkmul():
                 ttp_bytes_run += result[1]['ttp']
             sent_bytes.append(sent_bytes_run / len(x))
             recv_bytes.append(recv_bytes_run / len(x))
-            ttp_bytes.append(ttp_bytes_run / len(x))
+            ttp_bytes.append(ttp_bytes_run)
 
         metrics['sent'].append({'num': num_kmul, 'mean': np.mean(sent_bytes), 'std': np.std(sent_bytes)})
         metrics['recv'].append({'num': num_kmul, 'mean': np.mean(recv_bytes), 'std': np.std(recv_bytes)})
@@ -464,13 +465,15 @@ def nkmul():
             print(f"Num Scalar Multiplications: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
 
+    print_metrics(metrics)
+
 if __name__== "__main__" :
     sys.setrecursionlimit(5000)
     nparties()
-    #nadd()
-    #nmul()
-    #nkadd()
-    #nkmul()
+    nadd() #this is actually mul
+    nmul() #this is actually add
+    nkadd()
+    nkmul()
 
 
 
