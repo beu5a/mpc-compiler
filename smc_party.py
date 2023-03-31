@@ -57,7 +57,6 @@ class SMCParty:
         self.protocol_spec = protocol_spec
         self.value_dict = value_dict
 
-        #TODO modify this for the first participant , check with TAs on how to  , take min ? 
         self.is_first_party = (min(self.protocol_spec.participant_ids) == self.client_id)
         self.local_shares = self.share_secrets()
 
@@ -112,7 +111,6 @@ class SMCParty:
         return self.send_and_reconstruct_share(local_share,expr.id.decode("utf-8"))
 
 
-    # Suggestion: To process expressions, make use of the *visitor pattern* like so:
     def process_expression(
             self,
             expr: Expression
