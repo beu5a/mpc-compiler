@@ -13,9 +13,9 @@ class Share:
     A secret share in a finite field.
     """
 
-    MODULUS = 1606687021
-    ##TODO we need to think about these value , here is a link to the moodle post https://moodle.epfl.ch/mod/forum/discuss.php?d=87132
-    ##TODO I have another slightly modified class conception in Notion
+    #this modulus provides 256 bits of security
+    MODULUS = 101855371129257486166347889299578665493313847995829888078830076277971759798433
+
 
     def __init__(self, n :Optional[int] = 0):
         self._value = n % Share.MODULUS
