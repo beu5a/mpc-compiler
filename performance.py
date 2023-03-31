@@ -19,7 +19,9 @@ from tqdm import tqdm
 import os
 import numpy as np
 import time
-from sympy import symbols, Secret, Scalar
+
+from expression import Scalar, Secret
+from sympy import symbols
 from sympy.utilities.iterables import multiset_permutations
 from sympy.printing.str import StrPrinter
 from sympy.printing.latex import LatexPrinter
@@ -83,6 +85,7 @@ def suite(parties, expr):
     return results
 
 
+import os
 
 def print_metrics(metrics):
     # Check if file exists
@@ -92,7 +95,7 @@ def print_metrics(metrics):
             f.write('\\centering\n')
             f.write('\\begin{tabular}{c c c c}\n')
             f.write('\\hline\n')
-            f.write('Num Scalar Additions & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
+            f.write('Num Clients & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
             f.write('\\hline\n')
             f.write('\\end{tabular}\n')
             f.write('\\caption{Performance metrics for nkadd}\n')
@@ -105,16 +108,35 @@ def print_metrics(metrics):
         f.write('\\centering\n')
         f.write('\\begin{tabular}{c c c c}\n')
         f.write('\\hline\n')
-        f.write('Num Scalar Additions & Sent (bytes) & Received (bytes) & Time (s) \\\\ \n')
+        f.write('Num Clients & SMC sent & SMC recv & ttp & Time (s) \\\\ \n')
         f.write('\\hline\n')
         for d in metrics['sent']:
-            index = d['index']
-            f.write(f"{metrics['num'][index]} & {d['mean']:.4f} $\\pm$ {d['std']:.4f} & ")
-            f.write(f"{metrics['recv'][index]['mean']:.4f} $\\pm$ {metrics['recv'][index]['std']:.4f} & ")
-            f.write(f"{metrics['time'][index]['mean']:.4f} $\\pm$ {metrics['time'][index]['std']:.4f} \\\\ \n")
+            num = d['num']
+            f.write(f"{num} & {d['mean']:.4f} $\\pm$ {d['std']:.4f} & ")
+            recv = next((item for item in metrics['recv'] if item['num'] == num), None)
+            if recv:
+                f.write(f"{recv['mean']:.4f} $\\pm$ {recv['std']:.4f} & ")
+            else:
+                f.write('- & ')
+            ttp = next((item for item in metrics['ttp'] if item['num'] == num), None)
+            if ttp:
+                f.write(f"{ttp['mean']:.4f} $\\pm$ {ttp['std']:.4f} \\\\ \n")
+            else:
+                f.write('- & \\\\ \n')
+            time = next((item for item in metrics['time'] if item['num'] == num), None)
+            if ttp:
+                f.write(f"{time['mean']:.4f} $\\pm$ {time['std']:.4f} \\\\ \n")
+            else:
+                f.write('- & \\\\ \n')
         f.write('\\hline\n')
         f.write('\\end{tabular}\n')
         f.write('\\end{table}\n')
+
+
+
+
+
+
 
 
 
@@ -131,9 +153,8 @@ def nparties():
         "Bob": {bob_secret: 14},
         "Charlie": {charlie_secret: 2}
     }
-
-    num_runs = 10
-    num_clients_list = [1, 5, 10, 20, 50, 75, 100]
+    num_runs = 1
+    num_clients_list = [1, 5]
 
     metrics = {
         'sent': [],
@@ -183,6 +204,7 @@ def nparties():
         for d in data:
             print(f"Num clients: {d['num']}, Mean: {d['mean']:.4f}, Std: {d['std']:.4f}")
         print()
+    print_metrics(metrics)
 
 
 
@@ -445,10 +467,10 @@ def nkmul():
 if __name__== "__main__" :
     sys.setrecursionlimit(5000)
     nparties()
-    nadd()
-    nmul()
-    nkadd()
-    nkmul()
+    #nadd()
+    #nmul()
+    #nkadd()
+    #nkmul()
 
 
 
